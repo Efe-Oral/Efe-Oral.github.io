@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Efe Oral | Portfolio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: #fafaf8;
+            color: #1a1a1a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        .container { text-align: center; max-width: 480px; }
+        h1 { font-size: 2rem; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 0.3rem; }
+        p { color: #777; font-size: 0.9rem; margin-bottom: 2rem; }
+        .cards { display: flex; gap: 1.2rem; justify-content: center; flex-wrap: wrap; }
+        .card {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            width: 180px; height: 180px;
+            border-radius: 50%;
+            font-weight: 700; font-size: 0.85rem;
+            text-decoration: none; color: #fff;
+            text-align: center; line-height: 1.3;
+            padding: 1rem;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .card:hover { transform: scale(1.06); }
+        .card-ee { background: #FF6B4A; }
+        .card-ee:hover { box-shadow: 0 8px 30px rgba(255,107,74,0.35); }
+        .card-gd { background: #EE4239; }
+        .card-gd:hover { box-shadow: 0 8px 30px rgba(238,66,57,0.35); }
+        .card span { font-size: 0.68rem; font-weight: 500; opacity: 0.85; margin-top: 0.3rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Efe Oral</h1>
+        <p>Choose a portfolio to view</p>
+        <div class="cards">
+            <a href="electrical-engineer/" class="card card-ee">
+                Electrical Engineer
+                <span>Embedded Systems</span>
+            </a>
+            <a href="game-dev/" class="card card-gd">
+                Game Developer
+                <span>Computer Scientist</span>
+            </a>
+        </div>
+    </div>
+</body>
+</html>
