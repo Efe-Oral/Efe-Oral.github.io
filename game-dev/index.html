@@ -98,6 +98,69 @@
             background: var(--text); transition: all 0.3s;
         }
 
+        /* GAME TOGGLE — sits above the game, not overlapping it */
+        .game-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.3rem 0.55rem;
+            margin-bottom: 8px;
+            background: rgba(255,255,255,0.9);
+            border-radius: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .game-toggle input {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .game-toggle-track {
+            position: relative;
+            width: 32px;
+            height: 18px;
+            border-radius: 20px;
+            background: var(--border);
+            flex-shrink: 0;
+            transition: background 0.2s ease;
+        }
+
+        .game-toggle-thumb {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+            transition: transform 0.2s ease;
+        }
+
+        .game-toggle input:checked + .game-toggle-track {
+            background: var(--coral);
+        }
+
+        .game-toggle input:checked + .game-toggle-track .game-toggle-thumb {
+            transform: translateX(14px);
+        }
+
+        .game-toggle input:focus-visible + .game-toggle-track {
+            outline: 2px solid var(--orange);
+            outline-offset: 2px;
+        }
+
+        .game-toggle-label {
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--text-dim);
+        }
+
         /* HERO CONTACT */
         .hero-contact {
             display: flex;
@@ -300,6 +363,19 @@
             max-width: 960px;
             margin: 0 auto;
             padding: 3rem 3rem;
+        }
+
+        /* SIDE GAME — sits in the empty page margin beside the hero section */
+        .side-game {
+            position: absolute;
+            z-index: 5;
+            display: none;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .side-game canvas {
+            display: block;
         }
 
         .section-title {
@@ -1074,6 +1150,15 @@
 
 <div class="scroll-progress"></div>
 
+<div class="side-game" id="side-game">
+    <label class="game-toggle" for="game-toggle-input" title="Toggle the side game">
+        <input type="checkbox" id="game-toggle-input">
+        <span class="game-toggle-track"><span class="game-toggle-thumb"></span></span>
+        <span class="game-toggle-label">Game</span>
+    </label>
+    <canvas id="side-game-canvas" aria-hidden="true"></canvas>
+</div>
+
 <nav>
     <div class="nav-left">
         <span class="nav-dot"></span>
@@ -1106,7 +1191,7 @@
         <p class="hero-name">I'm Efe Oral</p>
         <p class="hero-role">Unity Game Developer</p>
         <h2 class="hero-about">A Bit About Me</h2>
-        <p class="hero-summary">Unity developer with an M.Sc. in Computer Science, proficient in C# with a focus on clean, scalable code. Completed 3 games: a 3D survival game, a first-person zombie shooter, and an XR parkour game. Built a speech-driven XR scene control pipeline with extensive free-form actions.</p>
+        <p class="hero-summary">Unity developer with an M.Sc. in Computer Science, proficient in C# with a focus on clean, scalable code. Completed 4 games including: a 3D survival game, a first-person zombie shooter, and an XR parkour game. Built a speech-driven XR scene control pipeline with extensive free-form actions.</p>
         <div class="hero-contact">
             <a href="mailto:efeoral@gmail.com"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>efeoral@gmail.com</a>
             <span class="hero-contact-sep">&middot;</span>
@@ -1652,6 +1737,356 @@ document.querySelector('.hamburger').addEventListener('click', function() {
 
     applyMode();
     mobileQuery.addEventListener('change', applyMode);
+})();
+
+// Side game — descending wind maze. Only appears in the empty page margin
+// beside the hero section on wide screens; hidden entirely otherwise.
+(function () {
+    const wrap = document.getElementById('side-game');
+    const canvas = document.getElementById('side-game-canvas');
+    const hero = document.querySelector('.hero');
+    if (!wrap || !canvas || !hero) return;
+    const ctx = canvas.getContext('2d');
+
+    const GAME_WIDTH = 340;
+    const NEEDED_MARGIN = 420; // hero's left gutter must be at least this wide to show the game
+    const ROW_HEIGHT = 68;
+    const ROW_TOP = 70;
+    const BALL_R = 7;
+    const BAR_H = 3;
+    const GAP_W = 58;
+    const TRAP_DEPTH = 26;
+    const BARRIER_W = 4;
+    const BARRIER_H = 28;
+    const GRAVITY = 0.16;
+    const WIND = 0.05;
+    const MOVE_ACCEL = 0.30;
+    const FRICTION = 0.93;
+    const MAX_VX = 3.0;
+    const MAX_VY = 6;
+    const JUMP_VY = -4.3;
+
+    let width = GAME_WIDTH;
+    let height = 480;
+    let rows = [];
+    let ball = { x: 0, y: 0, vx: 0, vy: 0, grounded: false };
+    let stuck = false;
+    let won = false;
+    let leftHeld = false;
+    let rightHeld = false;
+    let visible = false;
+    let inView = false;
+    let rafId = null;
+    let windPhase = 0;
+
+    const toggleInput = document.getElementById('game-toggle-input');
+    const STORAGE_KEY = 'side-game-enabled-v2'; // bumped so any old 'true' left over from testing is ignored
+    let enabled = false; // off by default — visitors opt in via the toggle
+    try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored !== null) enabled = stored === 'true';
+    } catch (e) { /* localStorage unavailable — default to off */ }
+    if (toggleInput) toggleInput.checked = enabled;
+
+    function cssVar(name) {
+        return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+    function rand(a, b) {
+        return a + Math.random() * (b - a);
+    }
+
+    function computeSegments(throughX, trapX) {
+        const gaps = [{ x0: throughX, x1: throughX + GAP_W }];
+        if (trapX !== null) gaps.push({ x0: trapX, x1: trapX + GAP_W });
+        gaps.sort(function (a, b) { return a.x0 - b.x0; });
+        const segs = [];
+        let cursor = 0;
+        gaps.forEach(function (g) {
+            if (g.x0 > cursor) segs.push({ x0: cursor, x1: g.x0 });
+            cursor = Math.max(cursor, g.x1);
+        });
+        if (cursor < width) segs.push({ x0: cursor, x1: width });
+        return segs;
+    }
+
+    function buildMaze() {
+        const numRows = Math.max(4, Math.floor((height - 90) / ROW_HEIGHT));
+        rows = [];
+        for (let i = 0; i < numRows; i++) {
+            const y = ROW_TOP + i * ROW_HEIGHT;
+            const throughX = rand(10, width - GAP_W - 10);
+            let trapX = null;
+            if (i > 0 && i < numRows - 1 && Math.random() < 0.3) {
+                let candidate;
+                do { candidate = rand(10, width - GAP_W - 10); }
+                while (Math.abs(candidate - throughX) < GAP_W + 6);
+                trapX = candidate;
+            }
+            // Vertical bars standing on a solid stretch of this row's
+            // platform — the ball has to jump over each one in turn. Wide
+            // stretches get a whole line of them instead of just one.
+            const barriers = [];
+            if (i > 0 && Math.random() < 0.5) {
+                const segs = computeSegments(throughX, trapX);
+                const bigSegs = segs.filter(function (s) { return (s.x1 - s.x0) >= 100; });
+                const medSegs = segs.filter(function (s) { return (s.x1 - s.x0) >= 46 && (s.x1 - s.x0) < 100; });
+                if (bigSegs.length) {
+                    const seg = bigSegs[Math.floor(Math.random() * bigSegs.length)];
+                    const segW = seg.x1 - seg.x0;
+                    const count = segW >= 170 ? 3 : 2;
+                    for (let k = 0; k < count; k++) {
+                        const slot = seg.x0 + 20 + (k * (segW - 40) / (count - 1 || 1));
+                        barriers.push(Math.max(seg.x0 + 8, Math.min(seg.x1 - 8 - BARRIER_W, slot)));
+                    }
+                } else if (medSegs.length) {
+                    const seg = medSegs[Math.floor(Math.random() * medSegs.length)];
+                    barriers.push(rand(seg.x0 + 14, seg.x1 - 14 - BARRIER_W));
+                }
+            }
+            rows.push({ y: y, throughX: throughX, trapX: trapX, barriers: barriers });
+        }
+    }
+
+    function resetBall() {
+        ball.x = width / 2;
+        ball.y = 28;
+        ball.vx = 0;
+        ball.vy = 0;
+        ball.grounded = false;
+        stuck = false;
+        won = false;
+    }
+
+    function restart() {
+        buildMaze();
+        resetBall();
+    }
+
+    function segmentsForRow(row) {
+        return computeSegments(row.throughX, row.trapX);
+    }
+
+    // Circle-vs-rect collision: pushes the ball out along the axis of least
+    // penetration and zeroes the matching velocity component.
+    function resolveCircleRect(b, rx0, ry0, rx1, ry1) {
+        const cx = Math.max(rx0, Math.min(b.x, rx1));
+        const cy = Math.max(ry0, Math.min(b.y, ry1));
+        const dx = b.x - cx;
+        const dy = b.y - cy;
+        const distSq = dx * dx + dy * dy;
+        if (distSq >= BALL_R * BALL_R) return false;
+        const dist = Math.sqrt(distSq) || 0.0001;
+        const overlap = BALL_R - dist;
+        const nx = dx / dist;
+        const ny = dy / dist;
+        b.x += nx * overlap;
+        b.y += ny * overlap;
+        if (ny < -0.5) { b.grounded = true; if (b.vy > 0) b.vy = 0; }
+        else if (ny > 0.5) { if (b.vy < 0) b.vy = 0; }
+        if (Math.abs(nx) > 0.5) b.vx = 0;
+        return true;
+    }
+
+    function step() {
+        if (stuck || won) return;
+
+        if (leftHeld) ball.vx -= MOVE_ACCEL;
+        if (rightHeld) ball.vx += MOVE_ACCEL;
+        ball.vx += WIND; // constant wind blowing the ball to the right
+        ball.vx *= FRICTION;
+        ball.vx = Math.max(-MAX_VX, Math.min(MAX_VX, ball.vx));
+
+        ball.vy += GRAVITY;
+        ball.vy = Math.min(MAX_VY, ball.vy);
+
+        ball.grounded = false;
+        ball.x += ball.vx;
+        ball.y += ball.vy;
+
+        if (ball.x - BALL_R < 0) { ball.x = BALL_R; ball.vx = 0; }
+        if (ball.x + BALL_R > width) { ball.x = width - BALL_R; ball.vx = 0; }
+
+        rows.forEach(function (row) {
+            if (row.y < ball.y - 60 || row.y > ball.y + 60) return;
+            segmentsForRow(row).forEach(function (seg) {
+                resolveCircleRect(ball, seg.x0, row.y, seg.x1, row.y + BAR_H);
+            });
+            if (row.trapX !== null) {
+                const floorY = row.y + TRAP_DEPTH;
+                const wasFalling = ball.vy >= 0;
+                const inTrapX = ball.x > row.trapX && ball.x < row.trapX + GAP_W;
+                const hitFloor = resolveCircleRect(ball, row.trapX, floorY, row.trapX + GAP_W, floorY + BAR_H);
+                resolveCircleRect(ball, row.trapX - BAR_H, row.y, row.trapX, floorY + BAR_H);
+                resolveCircleRect(ball, row.trapX + GAP_W, row.y, row.trapX + GAP_W + BAR_H, floorY + BAR_H);
+                if (hitFloor && wasFalling && inTrapX) stuck = true; // dead end — game rule, not just hard physics
+            }
+            row.barriers.forEach(function (bx) {
+                resolveCircleRect(ball, bx, row.y - BARRIER_H, bx + BARRIER_W, row.y);
+            });
+        });
+
+        if (ball.y - BALL_R > height) {
+            won = true;
+            ball.y = height - BALL_R;
+        }
+    }
+
+    function draw() {
+        // No background fill — the canvas stays transparent so the game
+        // reads as part of the page itself rather than a boxed-in widget.
+        ctx.clearRect(0, 0, width, height);
+
+        // wind — dark streaks drifting left to right; visible but still
+        // clearly in the background behind the solid black obstacles
+        ctx.save();
+        ctx.globalAlpha = 0.22;
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        for (let i = 0; i < 9; i++) {
+            const rowY = (i * 53 + 30) % height;
+            const len = 30;
+            const xx = ((i * 61 + windPhase) % (width + len)) - len;
+            ctx.beginPath();
+            ctx.moveTo(xx, rowY);
+            ctx.lineTo(xx + len, rowY);
+            ctx.stroke();
+        }
+        ctx.restore();
+
+        // everything is black except the finish line
+        ctx.fillStyle = '#000';
+        rows.forEach(function (row) {
+            segmentsForRow(row).forEach(function (seg) {
+                ctx.fillRect(seg.x0, row.y, seg.x1 - seg.x0, BAR_H);
+            });
+            if (row.trapX !== null) {
+                const floorY = row.y + TRAP_DEPTH;
+                ctx.fillRect(row.trapX - BAR_H, row.y, BAR_H, TRAP_DEPTH + BAR_H);
+                ctx.fillRect(row.trapX + GAP_W, row.y, BAR_H, TRAP_DEPTH + BAR_H);
+                ctx.fillStyle = '#ee4239';
+                ctx.fillRect(row.trapX, floorY, GAP_W, BAR_H);
+                ctx.fillStyle = '#000';
+            }
+            row.barriers.forEach(function (bx) {
+                ctx.fillRect(bx, row.y - BARRIER_H, BARRIER_W, BARRIER_H);
+            });
+        });
+
+        // goal strip at the bottom — the one thing that stays green
+        ctx.fillStyle = 'rgba(74,222,128,0.35)';
+        ctx.fillRect(0, height - 14, width, 14);
+
+        // ball
+        ctx.beginPath();
+        ctx.fillStyle = '#000';
+        ctx.arc(ball.x, ball.y, BALL_R, 0, Math.PI * 2);
+        ctx.fill();
+
+        // top instructions — large enough to read at a glance
+        ctx.font = '700 13px Inter, system-ui, sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillStyle = 'rgba(26,26,26,0.55)';
+        ctx.fillText('←   →     SPACE = JUMP', width - 4, 22);
+
+        if (stuck || won) {
+            ctx.fillStyle = 'rgba(26,26,26,0.85)';
+            ctx.fillRect(0, height / 2 - 30, width, 60);
+            ctx.fillStyle = '#fff';
+            ctx.textAlign = 'center';
+            ctx.font = '700 15px Inter, system-ui, sans-serif';
+            ctx.fillText(stuck ? 'Dead end!' : 'You made it!', width / 2, height / 2 - 6);
+            ctx.font = '600 13px Inter, system-ui, sans-serif';
+            ctx.fillText('Press SPACE to ' + (stuck ? 'retry' : 'play again'), width / 2, height / 2 + 16);
+        }
+    }
+
+    function loop() {
+        step();
+        windPhase = (windPhase + 1.6) % 10000;
+        draw();
+        rafId = requestAnimationFrame(loop);
+    }
+    function startLoop() { if (rafId == null) rafId = requestAnimationFrame(loop); }
+    function stopLoop() { if (rafId != null) { cancelAnimationFrame(rafId); rafId = null; } }
+    function updateActive() { if (visible && inView) startLoop(); else stopLoop(); }
+
+    function layout() {
+        const heroRect = hero.getBoundingClientRect();
+        const marginLeft = heroRect.left;
+        const spaceOK = marginLeft >= NEEDED_MARGIN;
+        const shouldShow = enabled && spaceOK;
+        const TOP_CLEARANCE = 70; // keeps the game below the fixed nav bar
+        const BOTTOM_GAP = 16;    // breathing room above the Technical Skills section
+        const TOGGLE_SPACE = 38;  // toggle row height + its margin, sitting above the canvas
+
+        width = GAME_WIDTH;
+        height = Math.max(280, Math.round(hero.offsetHeight - TOP_CLEARANCE - BOTTOM_GAP - TOGGLE_SPACE));
+
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        canvas.style.width = width + 'px';
+        canvas.style.height = height + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        wrap.style.top = (hero.offsetTop + TOP_CLEARANCE) + 'px';
+        wrap.style.left = Math.max(16, Math.round((marginLeft - width) / 2)) + 'px';
+
+        // The wrap (and the toggle on it) stays visible whenever there's
+        // room, regardless of the on/off state — otherwise turning the game
+        // off would hide the only control that can turn it back on. Only
+        // the canvas itself follows the enabled flag.
+        wrap.style.display = spaceOK ? 'flex' : 'none';
+        canvas.style.display = shouldShow ? 'block' : 'none';
+
+        if (shouldShow !== visible) visible = shouldShow;
+        if (visible) restart();
+    }
+
+    const io = new IntersectionObserver(function (entries) {
+        inView = entries[0].isIntersecting;
+        updateActive();
+    }, { threshold: 0.05 });
+    io.observe(wrap);
+
+    function onKeyDown(e) {
+        if (!visible || !inView) return;
+        if (e.code === 'ArrowLeft') { leftHeld = true; e.preventDefault(); }
+        else if (e.code === 'ArrowRight') { rightHeld = true; e.preventDefault(); }
+        else if (e.code === 'Space') {
+            e.preventDefault();
+            if (stuck || won) restart();
+            else if (ball.grounded) { ball.vy = JUMP_VY; ball.grounded = false; }
+        }
+    }
+    function onKeyUp(e) {
+        if (e.code === 'ArrowLeft') leftHeld = false;
+        else if (e.code === 'ArrowRight') rightHeld = false;
+    }
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+
+    let resizeTimer = null;
+    window.addEventListener('resize', function () {
+        if (resizeTimer) clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function () {
+            layout();
+            updateActive();
+        }, 150);
+    });
+
+    if (toggleInput) {
+        toggleInput.addEventListener('change', function () {
+            enabled = toggleInput.checked;
+            try { localStorage.setItem(STORAGE_KEY, String(enabled)); } catch (e) { /* ignore */ }
+            layout();
+            updateActive();
+        });
+    }
+
+    layout();
+    updateActive();
 })();
 </script>
 </body>
