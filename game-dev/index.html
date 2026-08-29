@@ -497,12 +497,9 @@
             border-radius: 10px 10px 0 0;
         }
 
-        .project-card:nth-child(1)::before { background: var(--orange); }
-        .project-card:nth-child(2)::before { background: var(--coral); }
-        .project-card:nth-child(3)::before { background: var(--cyan); }
-        .project-card:nth-child(4)::before { background: var(--orange); }
-        .project-card:nth-child(5)::before { background: var(--coral); }
-        .project-card:nth-child(6)::before { background: var(--cyan); }
+        .project-card.accent-orange::before { background: var(--orange); }
+        .project-card.accent-coral::before { background: var(--coral); }
+        .project-card.accent-cyan::before { background: var(--cyan); }
 
         .project-media {
             position: relative;
@@ -591,12 +588,9 @@
             margin-bottom: 0.3rem;
         }
 
-        .project-card:nth-child(1) .project-type { color: var(--orange); }
-        .project-card:nth-child(2) .project-type { color: var(--coral); }
-        .project-card:nth-child(3) .project-type { color: var(--cyan); }
-        .project-card:nth-child(4) .project-type { color: var(--orange); }
-        .project-card:nth-child(5) .project-type { color: var(--coral); }
-        .project-card:nth-child(6) .project-type { color: var(--cyan); }
+        .project-card.accent-orange .project-type { color: var(--orange); }
+        .project-card.accent-coral .project-type { color: var(--coral); }
+        .project-card.accent-cyan .project-type { color: var(--cyan); }
 
         .project-card h3 {
             font-size: 1.1rem;
@@ -635,12 +629,11 @@
             font-weight: bold;
         }
 
-        .project-card:nth-child(1) li::before { color: var(--orange); }
-        .project-card:nth-child(2) li::before { color: var(--coral); }
-        .project-card:nth-child(3) li::before { color: var(--cyan); }
-        .project-card:nth-child(4) li::before { color: var(--orange); }
-        .project-card:nth-child(5) li::before { color: var(--coral); }
-        .project-card:nth-child(6) li::before { color: var(--cyan); }
+        .project-card.accent-orange li::before { color: var(--orange); }
+        .project-card.accent-coral li::before { color: var(--coral); }
+        .project-card.accent-cyan li::before { color: var(--cyan); }
+
+        .project-card--clone { pointer-events: none; }
 
         .project-links { display: flex; gap: 0.75rem; margin-top: 0.8rem; flex-wrap: wrap; }
 
@@ -1151,7 +1144,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
     </button>
     <div class="projects-scroll" id="projects-scroll">
-        <div class="project-card">
+        <div class="project-card accent-orange">
             <div class="project-media">
                 <img src="images/not-so-fun-halloween.jpg" alt="Not So Fun Halloween — key art" width="800" height="450" loading="eager" decoding="async">
             </div>
@@ -1175,7 +1168,7 @@
             </div>
         </div>
 
-        <div class="project-card">
+        <div class="project-card accent-coral">
             <div class="project-media">
                 <img src="https://i.ytimg.com/vi/s3aD69NZztM/hqdefault.jpg" alt="Survival of the Fallen — trailer still" width="480" height="360" loading="lazy" decoding="async">
             </div>
@@ -1203,7 +1196,7 @@
             </div>
         </div>
 
-        <div class="project-card">
+        <div class="project-card accent-cyan">
             <div class="project-media">
                 <img class="project-thumb--zombie" src="images/zombie-fps.png" alt="Zombie FPS gameplay screenshot" width="800" height="450" loading="lazy" decoding="async">
             </div>
@@ -1227,7 +1220,7 @@
             </div>
         </div>
 
-        <div class="project-card">
+        <div class="project-card accent-orange">
             <div class="project-media">
                 <img src="images/vr-llm.png" alt="VR LLM scene interaction — in-engine screenshot" width="800" height="450" loading="lazy" decoding="async">
             </div>
@@ -1255,7 +1248,7 @@
             </div>
         </div>
 
-        <div class="project-card">
+        <div class="project-card accent-coral">
             <div class="project-media">
                 <img class="project-thumb--parkour" src="images/parkour-punk.png" alt="Parkour Punk — gameplay screenshot" width="1280" height="720" loading="eager" decoding="async">
             </div>
@@ -1279,7 +1272,7 @@
             </div>
         </div>
 
-        <div class="project-card">
+        <div class="project-card accent-cyan">
             <div class="project-media">
                 <img class="project-thumb--hells" src="images/hells-kitchen.png" alt="Hell's Kitchen — kitchen sim work in progress" width="800" height="450" loading="lazy" decoding="async">
             </div>
@@ -1494,12 +1487,45 @@ document.querySelector('.hamburger').addEventListener('click', function() {
     document.querySelector('.nav-links').classList.toggle('open');
 });
 
-// Projects carousel arrows
+// Projects carousel — reads as one continuous loop, not a dead end
 (function () {
     const strip = document.getElementById('projects-scroll');
     const prev = document.getElementById('projects-prev');
     const next = document.getElementById('projects-next');
     if (!strip || !prev || !next) return;
+
+    const realCards = Array.from(strip.children);
+    const count = realCards.length;
+    if (count < 2) return;
+
+    // The real cards are repeated a couple of times on each side. While you're
+    // inside that repeated buffer, scrolling is 100% native — nothing is
+    // touched. Only once you swipe all the way through an entire extra copy
+    // of the set do we jump (instantly, only between gestures, never mid-swipe)
+    // back to an identical card deeper in the buffer. Because every repeat is
+    // pixel-identical, that jump is invisible, so normal swiping just feels
+    // like an unbroken loop instead of "snapping back to the beginning".
+    const SIDE_REPEATS = 2;
+
+    function cloneRealSet() {
+        const frag = document.createDocumentFragment();
+        realCards.forEach(function (card) {
+            const clone = card.cloneNode(true);
+            clone.classList.add('project-card--clone');
+            clone.setAttribute('aria-hidden', 'true');
+            clone.querySelectorAll('a').forEach(function (a) { a.tabIndex = -1; });
+            frag.appendChild(clone);
+        });
+        return frag;
+    }
+
+    for (let i = 0; i < SIDE_REPEATS; i++) strip.appendChild(cloneRealSet());
+    for (let i = 0; i < SIDE_REPEATS; i++) strip.insertBefore(cloneRealSet(), strip.firstChild);
+
+    const realStart = SIDE_REPEATS * count;
+    const total = strip.children.length;
+    const lowZone = count;          // outermost repeat at the very start
+    const highZone = total - count; // outermost repeat at the very end
 
     function scrollStep() {
         const card = strip.querySelector('.project-card');
@@ -1508,11 +1534,62 @@ document.querySelector('.hamburger').addEventListener('click', function() {
         return card.getBoundingClientRect().width + gap;
     }
 
+    function goToIndex(index, smooth) {
+        strip.scrollTo({ left: scrollStep() * index, behavior: smooth ? 'smooth' : 'auto' });
+    }
+
+    function currentIndex() {
+        return Math.round(strip.scrollLeft / scrollStep());
+    }
+
+    function equivalentRealIndex(index) {
+        return realStart + (((index - realStart) % count) + count) % count;
+    }
+
+    goToIndex(realStart, false);
+
+    let settleTimer = null;
+    function handleSettle() {
+        const idx = currentIndex();
+        if (idx < lowZone || idx >= highZone) {
+            goToIndex(equivalentRealIndex(idx), false);
+        }
+    }
+
+    strip.addEventListener('scroll', function () {
+        if (settleTimer) clearTimeout(settleTimer);
+        settleTimer = setTimeout(handleSettle, 150);
+    }, { passive: true });
+
     prev.addEventListener('click', function () {
-        strip.scrollBy({ left: -scrollStep(), behavior: 'smooth' });
+        goToIndex(currentIndex() - 1, true);
     });
     next.addEventListener('click', function () {
-        strip.scrollBy({ left: scrollStep(), behavior: 'smooth' });
+        goToIndex(currentIndex() + 1, true);
+    });
+
+    // Some mobile browsers mis-measure the height of a horizontally scrolling
+    // flex row and only account for the currently-visible card, clipping the
+    // rest and forcing an internal scroll to read them. Pin the row's height
+    // to the tallest card explicitly so nothing gets cut off.
+    function syncHeight() {
+        const cs = getComputedStyle(strip);
+        const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+        let max = 0;
+        Array.from(strip.children).forEach(function (card) {
+            max = Math.max(max, card.scrollHeight);
+        });
+        strip.style.minHeight = (max + padY) + 'px';
+    }
+    syncHeight();
+
+    let resizeTimer = null;
+    window.addEventListener('resize', function () {
+        if (resizeTimer) clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function () {
+            goToIndex(equivalentRealIndex(currentIndex()), false);
+            syncHeight();
+        }, 150);
     });
 })();
 </script>
