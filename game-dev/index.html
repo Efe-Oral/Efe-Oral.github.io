@@ -471,6 +471,8 @@
 
         .project-card {
             flex: 0 0 min(340px, 86vw);
+            min-width: 0;
+            max-width: 100%;
             scroll-snap-align: start;
             background: var(--bg);
             border: 1px solid var(--border);
@@ -576,6 +578,7 @@
         .project-card-body {
             padding: 0 1.35rem 1.35rem;
             flex: 1;
+            min-width: 0;
             display: flex;
             flex-direction: column;
         }
@@ -621,6 +624,8 @@
             padding-left: 1rem;
             position: relative;
             margin-bottom: 0.3rem;
+            overflow-wrap: break-word;
+            word-break: break-word;
         }
 
         .project-card li::before {
@@ -1487,7 +1492,7 @@ document.querySelector('.hamburger').addEventListener('click', function() {
     document.querySelector('.nav-links').classList.toggle('open');
 });
 
-// Projects carousel — reads as one continuous loop, not a dead end
+// Projects carousel — desktop stays a plain scroller; mobile loops seamlessly
 (function () {
     const strip = document.getElementById('projects-scroll');
     const prev = document.getElementById('projects-prev');
@@ -1498,34 +1503,8 @@ document.querySelector('.hamburger').addEventListener('click', function() {
     const count = realCards.length;
     if (count < 2) return;
 
-    // The real cards are repeated a couple of times on each side. While you're
-    // inside that repeated buffer, scrolling is 100% native — nothing is
-    // touched. Only once you swipe all the way through an entire extra copy
-    // of the set do we jump (instantly, only between gestures, never mid-swipe)
-    // back to an identical card deeper in the buffer. Because every repeat is
-    // pixel-identical, that jump is invisible, so normal swiping just feels
-    // like an unbroken loop instead of "snapping back to the beginning".
-    const SIDE_REPEATS = 2;
-
-    function cloneRealSet() {
-        const frag = document.createDocumentFragment();
-        realCards.forEach(function (card) {
-            const clone = card.cloneNode(true);
-            clone.classList.add('project-card--clone');
-            clone.setAttribute('aria-hidden', 'true');
-            clone.querySelectorAll('a').forEach(function (a) { a.tabIndex = -1; });
-            frag.appendChild(clone);
-        });
-        return frag;
-    }
-
-    for (let i = 0; i < SIDE_REPEATS; i++) strip.appendChild(cloneRealSet());
-    for (let i = 0; i < SIDE_REPEATS; i++) strip.insertBefore(cloneRealSet(), strip.firstChild);
-
-    const realStart = SIDE_REPEATS * count;
-    const total = strip.children.length;
-    const lowZone = count;          // outermost repeat at the very start
-    const highZone = total - count; // outermost repeat at the very end
+    const mobileQuery = window.matchMedia('(max-width: 768px)');
+    let teardown = null;
 
     function scrollStep() {
         const card = strip.querySelector('.project-card');
@@ -1534,63 +1513,109 @@ document.querySelector('.hamburger').addEventListener('click', function() {
         return card.getBoundingClientRect().width + gap;
     }
 
-    function goToIndex(index, smooth) {
-        strip.scrollTo({ left: scrollStep() * index, behavior: smooth ? 'smooth' : 'auto' });
+    // ---- Desktop: original behaviour, untouched — arrows scroll by one card ----
+    function setupDesktop() {
+        function onPrev() { strip.scrollBy({ left: -scrollStep(), behavior: 'smooth' }); }
+        function onNext() { strip.scrollBy({ left: scrollStep(), behavior: 'smooth' }); }
+        prev.addEventListener('click', onPrev);
+        next.addEventListener('click', onNext);
+        return function () {
+            prev.removeEventListener('click', onPrev);
+            next.removeEventListener('click', onNext);
+        };
     }
 
-    function currentIndex() {
-        return Math.round(strip.scrollLeft / scrollStep());
-    }
+    // ---- Mobile: seamless infinite loop ----
+    // Clone only the first card, appended after the real last card. The strip
+    // starts at scrollLeft 0 — real card 1, scrollbar flush left, nothing
+    // pushes the start position rightward. Swiping past the real last card
+    // lands you on that pixel-identical clone; the moment the browser
+    // reports the scroll has settled, we silently re-point back to the real
+    // first card. Since the clone and the real card are indistinguishable,
+    // the swap is invisible: no jump, no stop.
+    function setupMobile() {
+        const firstClone = realCards[0].cloneNode(true);
+        firstClone.classList.add('project-card--clone');
+        firstClone.setAttribute('aria-hidden', 'true');
+        firstClone.querySelectorAll('a').forEach(function (a) { a.tabIndex = -1; });
+        strip.appendChild(firstClone);
+        // Layout: [0..count-1]=real cards, [count]=clone-of-first
 
-    function equivalentRealIndex(index) {
-        return realStart + (((index - realStart) % count) + count) % count;
-    }
-
-    goToIndex(realStart, false);
-
-    let settleTimer = null;
-    function handleSettle() {
-        const idx = currentIndex();
-        if (idx < lowZone || idx >= highZone) {
-            goToIndex(equivalentRealIndex(idx), false);
+        function goToIndex(index, smooth) {
+            strip.scrollTo({ left: scrollStep() * index, behavior: smooth ? 'smooth' : 'auto' });
         }
+        function currentIndex() {
+            return Math.round(strip.scrollLeft / scrollStep());
+        }
+
+        function settleOnRealCard() {
+            if (currentIndex() >= count) goToIndex(0, false); // wrap to the real first card
+        }
+
+        // Prefer the native 'scrollend' signal (fires once momentum truly
+        // stops) — it's the cleanest, jitter-free way to detect "settled".
+        // Older browsers fall back to a short debounce on 'scroll'.
+        const supportsScrollEnd = 'onscrollend' in window;
+        let debounceTimer = null;
+        function onScroll() {
+            if (supportsScrollEnd) return;
+            if (debounceTimer) clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(settleOnRealCard, 80);
+        }
+        strip.addEventListener('scroll', onScroll, { passive: true });
+        if (supportsScrollEnd) strip.addEventListener('scrollend', settleOnRealCard);
+
+        function onPrev() { goToIndex(currentIndex() - 1, true); }
+        function onNext() { goToIndex(currentIndex() + 1, true); }
+        prev.addEventListener('click', onPrev);
+        next.addEventListener('click', onNext);
+
+        // Some mobile browsers mis-measure the height of a horizontally
+        // scrolling flex row, only accounting for the currently-visible
+        // card and clipping the rest. Pin the row's height to the tallest
+        // card explicitly so nothing gets cut off.
+        function syncHeight() {
+            const cs = getComputedStyle(strip);
+            const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+            let max = 0;
+            Array.from(strip.children).forEach(function (card) {
+                max = Math.max(max, card.scrollHeight);
+            });
+            strip.style.minHeight = (max + padY) + 'px';
+        }
+        syncHeight();
+
+        let orientationTimer = null;
+        function onOrientationResize() {
+            if (orientationTimer) clearTimeout(orientationTimer);
+            orientationTimer = setTimeout(function () {
+                goToIndex(Math.min(Math.max(currentIndex(), 0), count - 1), false);
+                syncHeight();
+            }, 150);
+        }
+        window.addEventListener('resize', onOrientationResize);
+
+        return function () {
+            if (debounceTimer) clearTimeout(debounceTimer);
+            if (orientationTimer) clearTimeout(orientationTimer);
+            strip.removeEventListener('scroll', onScroll);
+            if (supportsScrollEnd) strip.removeEventListener('scrollend', settleOnRealCard);
+            window.removeEventListener('resize', onOrientationResize);
+            prev.removeEventListener('click', onPrev);
+            next.removeEventListener('click', onNext);
+            firstClone.remove();
+            strip.style.minHeight = '';
+            strip.scrollTo({ left: 0, behavior: 'auto' });
+        };
     }
 
-    strip.addEventListener('scroll', function () {
-        if (settleTimer) clearTimeout(settleTimer);
-        settleTimer = setTimeout(handleSettle, 150);
-    }, { passive: true });
-
-    prev.addEventListener('click', function () {
-        goToIndex(currentIndex() - 1, true);
-    });
-    next.addEventListener('click', function () {
-        goToIndex(currentIndex() + 1, true);
-    });
-
-    // Some mobile browsers mis-measure the height of a horizontally scrolling
-    // flex row and only account for the currently-visible card, clipping the
-    // rest and forcing an internal scroll to read them. Pin the row's height
-    // to the tallest card explicitly so nothing gets cut off.
-    function syncHeight() {
-        const cs = getComputedStyle(strip);
-        const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
-        let max = 0;
-        Array.from(strip.children).forEach(function (card) {
-            max = Math.max(max, card.scrollHeight);
-        });
-        strip.style.minHeight = (max + padY) + 'px';
+    function applyMode() {
+        if (teardown) teardown();
+        teardown = mobileQuery.matches ? setupMobile() : setupDesktop();
     }
-    syncHeight();
 
-    let resizeTimer = null;
-    window.addEventListener('resize', function () {
-        if (resizeTimer) clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(function () {
-            goToIndex(equivalentRealIndex(currentIndex()), false);
-            syncHeight();
-        }, 150);
-    });
+    applyMode();
+    mobileQuery.addEventListener('change', applyMode);
 })();
 </script>
 </body>
