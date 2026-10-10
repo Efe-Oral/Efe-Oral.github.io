@@ -406,6 +406,22 @@
         .section-title--coral::after { background: var(--coral); }
         .section-title--cyan::after { background: var(--cyan); }
 
+        /* INTRO VIDEO */
+        .intro-video {
+            aspect-ratio: 16 / 9;
+            background: #000;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 14px 36px rgba(0,0,0,0.08);
+        }
+
+        .intro-video video {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
         /* SKILLS */
         .skills-grid {
             display: grid;
@@ -1213,6 +1229,17 @@
             <a href="#projects" class="hero-btn hero-btn--coral">Projects</a>
             <a href="#contact" class="hero-btn hero-btn--cyan">Contact</a>
         </div>
+    </div>
+</section>
+
+<!-- INTRO VIDEO -->
+<section id="intro" class="reveal">
+    <h2 class="section-title section-title--cyan">Intro Video</h2>
+    <div class="intro-video">
+        <video controls playsinline preload="none" poster="images/intro-poster.jpg">
+            <source src="intro.mp4" type="video/mp4">
+            <a href="intro.mp4">Watch the intro video</a>
+        </video>
     </div>
 </section>
 
