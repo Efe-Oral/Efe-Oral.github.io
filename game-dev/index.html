@@ -759,6 +759,8 @@
         .project-thumb--zombie { object-position: 100% 100%; }
         .project-thumb--hells { object-position: center 85%; }
         .project-thumb--parkour { object-position: center 40%; }
+        .project-thumb--cats { object-position: center 70%; }
+        .project-thumb--paintball { object-position: center 15%; }
 
         .project-media::after {
             content: '';
@@ -1328,7 +1330,7 @@
         <p class="hero-name">I'm Efe Oral</p>
         <p class="hero-role">Unity Game Developer</p>
         <h2 class="hero-about">A Bit About Me</h2>
-        <p class="hero-summary">Unity developer with an M.Sc. in Computer Science, proficient in C# with a focus on clean, scalable code. Completed 4 games including: a 3D survival game, a first-person zombie shooter, and an XR parkour game. Built a speech-driven XR scene control pipeline with extensive free-form actions.</p>
+        <p class="hero-summary">Unity developer with an M.Sc. in Computer Science, proficient in C# with a focus on clean, scalable code. Completed 7 games, including a 3D survival game, a first-person zombie shooter, an XR parkour game and two mobile games. Built a speech-driven XR scene control pipeline with extensive free-form actions.</p>
         <a href="#intro" class="hero-demo-link"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4"/></svg>Watch the 1-minute thesis demo</a>
         <div class="hero-contact">
             <a href="mailto:efeoral@gmail.com"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>efeoral@gmail.com</a>
@@ -1418,22 +1420,74 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
     </button>
     <div class="projects-scroll" id="projects-scroll">
-        <div class="project-card accent-orange">
+        <div class="project-card accent-coral">
             <div class="project-media">
-                <a href="https://github.com/Efe-Oral/Not-So-Fun-Halloween" target="_blank" rel="noopener noreferrer" aria-label="View Not So Fun Halloween on GitHub">
-                    <img src="images/not-so-fun-halloween.jpg" alt="Not So Fun Halloween — key art" width="800" height="450" loading="eager" decoding="async">
+                <a href="https://github.com/Efe-Oral/Paintball-Warrior" target="_blank" rel="noopener noreferrer" aria-label="View Paintball Warrior on GitHub">
+                    <img class="project-thumb--paintball" src="images/paintball-warrior.jpg" alt="Paintball Warrior — key art" width="1000" height="558" loading="eager" decoding="async">
                 </a>
             </div>
             <div class="project-card-body">
-            <div class="project-type">Top-Down 2D Rogue-like &mdash; In Development</div>
+            <div class="project-type">Mobile Arena Game</div>
+            <h3>Paintball Warrior</h3>
+            <div class="project-stack">
+                <span>Unity 6</span><span>C#</span><span>Android</span>
+            </div>
+            <ul>
+                <li>Built a one-thumb mobile arena game: the sprayer fires as you move, painting the whole arena before the tank runs dry</li>
+                <li>Tracked coverage on an invisible tile grid, separate from the splat decals, to stay cheap on mid-range phones</li>
+                <li>Designed 4 sprayers with distinct trade-offs and a 3-star rating for paint efficiency</li>
+            </ul>
+            <div class="project-links">
+                <a href="https://github.com/Efe-Oral/Paintball-Warrior" target="_blank">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65S8.93 17.38 9 18v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
+                    GitHub
+                </a>
+            </div>
+            </div>
+        </div>
+
+        <div class="project-card accent-cyan">
+            <div class="project-media">
+                <a href="https://github.com/Efe-Oral/Cats-vs-Pillows" target="_blank" rel="noopener noreferrer" aria-label="View Cats vs Pillows on GitHub">
+                    <img class="project-thumb--cats" src="images/cats-vs-pillows.jpg" alt="Cats vs Pillows — Sunset Snack level" width="1000" height="653" loading="lazy" decoding="async">
+                </a>
+            </div>
+            <div class="project-card-body">
+            <div class="project-type">Mobile Puzzle-Platformer</div>
+            <h3>Cats vs Pillows</h3>
+            <div class="project-stack">
+                <span>Unity</span><span>C#</span><span>URP</span>
+            </div>
+            <ul>
+                <li>Built a cozy puzzle-platformer: stack pillows to bridge the gaps before the walking cat arrives</li>
+                <li>Kept the game rules in plain C# with no Unity dependency, covered by EditMode tests that also validate every shipped level</li>
+                <li>Made levels, rooms and times of day data-driven assets, and wrote custom toon, ink-outline and glow shaders</li>
+            </ul>
+            <div class="project-links">
+                <a href="https://github.com/Efe-Oral/Cats-vs-Pillows" target="_blank">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65S8.93 17.38 9 18v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
+                    GitHub
+                </a>
+            </div>
+            </div>
+        </div>
+
+        <div class="project-card accent-orange">
+            <div class="project-media">
+                <a href="https://github.com/Efe-Oral/Not-So-Fun-Halloween" target="_blank" rel="noopener noreferrer" aria-label="View Not So Fun Halloween on GitHub">
+                    <img src="images/not-so-fun-halloween.jpg" alt="Not So Fun Halloween — key art" width="800" height="450" loading="lazy" decoding="async">
+                </a>
+            </div>
+            <div class="project-card-body">
+            <div class="project-type">Top-Down 2D Rogue-like</div>
             <h3>Not So Fun Halloween</h3>
             <div class="project-stack">
                 <span>Unity</span><span>C#</span>
             </div>
             <ul>
-                <li>Building a top-down 2D rogue-like with a day/night cycle driving pacing and threat level</li>
-                <li>Implementing melee and ranged combat alongside an upgrade system and multiple enemy types</li>
-                <li>Designing a base defense loop where players fortify and hold their base through the night</li>
+                <li>Built a top-down 2D rogue-like with a day/night cycle driving pacing and threat level</li>
+                <li>Implemented melee and ranged combat alongside an upgrade system and multiple enemy types</li>
+                <li>Designed a base defense loop where players fortify and hold their base through the night</li>
             </ul>
             <div class="project-links">
                 <a href="https://github.com/Efe-Oral/Not-So-Fun-Halloween" target="_blank">
@@ -1559,19 +1613,19 @@
         <div class="project-card accent-cyan">
             <div class="project-media">
                 <a href="https://github.com/Efe-Oral/Hell-s-Kitchen" target="_blank" rel="noopener noreferrer" aria-label="View Hell's Kitchen on GitHub">
-                    <img class="project-thumb--hells" src="images/hells-kitchen.png" alt="Hell's Kitchen — kitchen sim work in progress" width="800" height="450" loading="lazy" decoding="async">
+                    <img class="project-thumb--hells" src="images/hells-kitchen.png" alt="Hell's Kitchen — kitchen gameplay screenshot" width="800" height="450" loading="lazy" decoding="async">
                 </a>
             </div>
             <div class="project-card-body">
-            <div class="project-type">Cooking Simulation &mdash; In Development</div>
+            <div class="project-type">Cooking Simulation</div>
             <h3>Hell&rsquo;s Kitchen</h3>
             <div class="project-stack">
                 <span>Unity</span><span>C#</span><span>Input System</span>
             </div>
             <ul>
-                <li>Active Unity project: establishing kitchen layout, player interaction with counters and basic prep flow as the foundation for a fast-paced cooking loop</li>
-                <li>Targeting Overcooked&ndash;style experience: ticket-based orders, ingredient stations, cooking and plating before timed delivery to a serving counter</li>
-                <li>Roadmap aligned with proven patterns from that genre: ScriptableObject recipes, order queue UI, state-driven stations and polish pass on animations and feedback</li>
+                <li>Built an Overcooked&ndash;style cooking game: ticket-based orders, ingredient stations, cooking and plating before timed delivery to a serving counter</li>
+                <li>Structured the kitchen with ScriptableObject recipes, state-driven stations and an order queue UI</li>
+                <li>Finished with a polish pass on player interaction, animations and feedback for a fast-paced cooking loop</li>
             </ul>
             <div class="project-links">
                 <a href="https://github.com/Efe-Oral/Hell-s-Kitchen" target="_blank">
