@@ -8,7 +8,7 @@ Two portfolio websites for **Efe Oral** — one for electrical engineering and o
 - [efe-oral.github.io/electrical-engineer](https://efe-oral.github.io/electrical-engineer) — Electrical Engineering CV
 - [efe-oral.github.io/game-dev](https://efe-oral.github.io/game-dev) — Game Development CV
 
-▶️ [Watch the Game Dev CV intro (21s)](https://efe-oral.github.io/game-dev/intro.mp4)
+▶️ [Watch the M.Sc. thesis demo (53s)](https://efe-oral.github.io/game-dev/videos/thesis-demo.mp4)
 
 ## Structure
 

@@ -331,6 +331,20 @@
             animation: fadeUp 0.6s ease forwards 0.6s;
         }
 
+        .hero-demo-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            margin: -0.3rem 0 1.1rem;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--coral);
+            opacity: 0;
+            animation: fadeUp 0.6s ease forwards 0.65s;
+        }
+
+        .hero-demo-link svg { width: 10px; height: 10px; }
+
         .hero-buttons {
             display: flex;
             gap: 1.2rem;
@@ -416,8 +430,10 @@
             box-shadow: 0 14px 36px rgba(0,0,0,0.08);
         }
 
-        .intro-video video {
+        .intro-video video,
+        .intro-video iframe {
             display: block;
+            border: 0;
             width: 100%;
             height: 100%;
         }
@@ -641,6 +657,8 @@
         }
 
         .project-card:hover .project-media img { transform: scale(1.08); }
+
+        #intro { scroll-margin-top: 70px; }
 
         .project-thumb--zombie { object-position: 100% 100%; }
         .project-thumb--hells { object-position: center 85%; }
@@ -1215,6 +1233,7 @@
         <p class="hero-role">Unity Game Developer</p>
         <h2 class="hero-about">A Bit About Me</h2>
         <p class="hero-summary">Unity developer with an M.Sc. in Computer Science, proficient in C# with a focus on clean, scalable code. Completed 4 games including: a 3D survival game, a first-person zombie shooter, and an XR parkour game. Built a speech-driven XR scene control pipeline with extensive free-form actions.</p>
+        <a href="#intro" class="hero-demo-link"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4"/></svg>Watch the 1-minute thesis demo</a>
         <div class="hero-contact">
             <a href="mailto:efeoral@gmail.com"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>efeoral@gmail.com</a>
             <span class="hero-contact-sep">&middot;</span>
@@ -1234,12 +1253,17 @@
 
 <!-- INTRO VIDEO -->
 <section id="intro" class="reveal">
-    <h2 class="section-title section-title--cyan">Intro Video</h2>
+    <h2 class="section-title section-title--cyan">Voice&#8209;Controlled VR Scene Editing</h2>
     <div class="intro-video">
-        <video controls playsinline preload="none" poster="images/intro-poster.jpg">
-            <source src="intro.mp4" type="video/mp4">
-            <a href="intro.mp4">Watch the intro video</a>
+        <!-- THESIS DEMO: the one place to change. To switch to YouTube, delete the <video>
+             and uncomment the <iframe>, replacing VIDEO_ID with the YouTube video ID. -->
+        <video controls preload="none" playsinline poster="videos/thesis-demo-poster.jpg" width="1920" height="1080" aria-label="M.Sc. thesis demo: voice-controlled VR scene editing (53 seconds)">
+            <source src="videos/thesis-demo.mp4" type="video/mp4">
+            <a href="videos/thesis-demo.mp4">Watch the thesis demo</a>
         </video>
+        <!--
+        <iframe src="https://www.youtube-nocookie.com/embed/VIDEO_ID" title="M.Sc. thesis demo: voice-controlled VR scene editing" loading="lazy" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+        -->
     </div>
 </section>
 
@@ -1384,12 +1408,12 @@
             <div class="project-type">Speech-Controlled VR Scene</div>
             <h3>LLM-Driven VR Scene Controller</h3>
             <div class="project-stack">
-                <span>Unity</span><span>C#</span><span>MCP Protocol</span><span>XR Toolkit</span>
+                <span>Unity</span><span>C#</span><span>MCP Protocol</span><span>XR Toolkit</span><span>Azure Speech</span>
             </div>
             <ul>
-                <li>Built a speech-driven VR scene control system using LLMs and MCP protocol with 9 unique actions</li>
-                <li>Added a runtime save system preserving environment changes during play mode &mdash; a rare feature in Unity</li>
-                <li>Implemented a VR interaction suite with walking, jumping, teleporting, grabbing and ray-cast manipulation</li>
+                <li>Voice commands create, recolor, scale, duplicate, rename and delete objects, with a confirmation before each action</li>
+                <li>Pipeline: Azure Speech &rarr; self-hosted LLM &rarr; MCP &rarr; custom Unity C# tools, editing the scene in near real time</li>
+                <li>Implemented VR interaction with grabbing, teleporting and ray-cast manipulation of objects</li>
             </ul>
             <div class="project-links">
                 <a href="https://github.com/Efe-Oral/Thesis" target="_blank">
